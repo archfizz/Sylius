@@ -16,27 +16,18 @@ use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 
 /**
  * @author Paweł Jędrzejewski <pawel@sylius.org>
+ * @author Gonzalo Vilaseca <gvilaseca@reiss.co.uk>
  */
 class SyliusAttributeBundle extends AbstractResourceBundle
 {
     /**
-     * Return array with currently supported drivers.
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public static function getSupportedDrivers()
     {
         return array(
-            SyliusResourceBundle::DRIVER_DOCTRINE_ORM
+            SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
         );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getBundlePrefix()
-    {
-        return 'sylius_attribute';
     }
 
     /**

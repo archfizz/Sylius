@@ -34,18 +34,21 @@ class DoctrineODMDriver extends AbstractDatabaseDriver
      */
     protected function getRepositoryDefinition(array $classes)
     {
-        $repositoryClass = 'Sylius\Bundle\ResourceBundle\Doctrine\ODM\MongoDB\DocumentRepository';
+        $reflection = new \ReflectionClass($classes['model']);
+        $translatableInterface = 'Sylius\Component\Translation\Model\TranslatableInterface';
+        $translatable = (interface_exists($translatableInterface) && $reflection->implementsInterface($translatableInterface));
+
+        $repositoryClass = $translatable ? 'Sylius\Bundle\TranslationBundle\Doctrine\ODM\MongoDB\TranslatableResourceRepository' : 'Sylius\Bundle\ResourceBundle\Doctrine\ODM\MongoDB\DocumentRepository';
 
         if (isset($classes['repository'])) {
-            $repositoryClass  = $classes['repository'];
+            $repositoryClass = $classes['repository'];
         }
 
         $unitOfWorkDefinition = new Definition('Doctrine\\ODM\\MongoDB\\UnitOfWork');
         $unitOfWorkDefinition
-            ->setFactoryService('doctrine.odm.mongodb.document_manager')
+            ->setFactoryService($this->getManagerServiceKey())
             ->setFactoryMethod('getUnitOfWork')
-            ->setPublic(false)
-        ;
+            ->setPublic(false);
 
         $definition = new Definition($repositoryClass);
         $definition->setArguments(array(
@@ -62,7 +65,7 @@ class DoctrineODMDriver extends AbstractDatabaseDriver
      */
     protected function getManagerServiceKey()
     {
-        return 'doctrine.odm.mongodb.document_manager';
+        return sprintf('doctrine.odm.mongodb.%_document_manager', $this->managerName);
     }
 
     /**

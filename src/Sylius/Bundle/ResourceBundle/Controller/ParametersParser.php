@@ -46,7 +46,7 @@ class ParametersParser
 
         foreach ($parameters as $key => $value) {
             if (is_array($value)) {
-                list($parameters[$key] , $parameterNames[$key]) = $this->parse($value, $request);
+                list($parameters[$key], $parameterNames[$key]) = $this->parse($value, $request);
             }
 
             if (is_string($value) && 0 === strpos($value, '$')) {
@@ -56,7 +56,7 @@ class ParametersParser
             }
 
             if (is_string($value) && 0 === strpos($value, 'expr:')) {
-                $parameters = $this->expression->evaluate(substr($value, 5));
+                $parameters[$key] = $this->expression->evaluate(substr($value, 5));
             }
         }
 

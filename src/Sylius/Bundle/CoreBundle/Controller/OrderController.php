@@ -12,6 +12,7 @@
 namespace Sylius\Bundle\CoreBundle\Controller;
 
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\OrderTransitions;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,7 +30,7 @@ class OrderController extends ResourceController
      */
     public function indexByUserAction(Request $request, $id)
     {
-        $user = $this->get('sylius.repository.user')->find($id);
+        $user = $this->get('sylius.repository.user')->findForDetailsPage($id);
 
         if (!$user) {
             throw new NotFoundHttpException('Requested user does not exist.');
@@ -42,6 +43,13 @@ class OrderController extends ResourceController
 
         $paginator->setCurrentPage($request->get('page', 1), true, true);
         $paginator->setMaxPerPage($this->config->getPaginationMaxPerPage());
+
+        // Fetch and cache deleted orders
+        $entityManager = $this->get('doctrine.orm.entity_manager');
+        $entityManager->getFilters()->disable('softdeleteable');
+        $paginator->getCurrentPageResults();
+        $paginator->getNbResults();
+        $entityManager->getFilters()->enable('softdeleteable');
 
         return $this->render('SyliusWebBundle:Backend/Order:indexByUser.html.twig', array(
             'user'   => $user,
@@ -68,5 +76,43 @@ class OrderController extends ResourceController
         $this->domainManager->update($order);
 
         return $this->redirectHandler->redirectToReferer();
+    }
+
+    /**
+     * Get order history changes.
+     *
+     * @param Request $request
+     *
+     * @return Response
+     *
+     * @throws NotFoundHttpException
+     */
+    public function historyAction(Request $request)
+    {
+        /** @var $order OrderInterface */
+        $order = $this->findOr404($request);
+
+        $repository = $this->get('doctrine')->getManager()->getRepository('Gedmo\Loggable\Entity\LogEntry');
+
+        $items = array();
+        foreach ($order->getItems() as $item) {
+            $items[] = $repository->getLogEntries($item);
+        }
+
+        $view = $this
+            ->view()
+            ->setTemplate($this->config->getTemplate('history.html'))
+            ->setData(array(
+                'order' => $order,
+                'logs'  => array(
+                    'order'            => $repository->getLogEntries($order),
+                    'order_items'      => $items,
+                    'billing_address'  => $repository->getLogEntries($order->getBillingAddress()),
+                    'shipping_address' => $repository->getLogEntries($order->getShippingAddress()),
+                ),
+            ))
+        ;
+
+        return $this->handleView($view);
     }
 }

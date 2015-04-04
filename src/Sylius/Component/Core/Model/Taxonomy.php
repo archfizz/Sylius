@@ -20,6 +20,8 @@ class Taxonomy extends BaseTaxonomy
      */
     public function __construct()
     {
+        parent::__construct();
+
         $this->setRoot(new Taxon());
     }
 }

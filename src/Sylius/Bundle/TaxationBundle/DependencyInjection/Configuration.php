@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\TaxationBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -36,7 +37,7 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')->isRequired()->cannotBeEmpty()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
             ->end()
         ;
 
@@ -62,18 +63,18 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Taxation\Model\TaxCategory')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\\Bundle\\ResourceBundle\\Controller\\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('repository')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\\Bundle\\TaxationBundle\\Form\\Type\\TaxCategoryType')->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\TaxationBundle\Form\Type\TaxCategoryType')->end()
                             ->end()
                         ->end()
                         ->arrayNode('tax_rate')
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Taxation\Model\TaxRate')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\\Bundle\\ResourceBundle\\Controller\\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('repository')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\\Bundle\\TaxationBundle\\Form\\Type\\TaxRateType')->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\TaxationBundle\Form\Type\TaxRateType')->end()
                             ->end()
                         ->end()
                     ->end()

@@ -41,7 +41,8 @@ class UserProvider extends FOSUBUserProvider
      */
     public function __construct(UserManagerInterface $userManager, RepositoryInterface $oauthRepository)
     {
-        $this->userManager     = $userManager;
+        parent::__construct($userManager, array());
+
         $this->oauthRepository = $oauthRepository;
     }
 
@@ -94,9 +95,8 @@ class UserProvider extends FOSUBUserProvider
             $user->setEmail($email);
         }
 
-        // if username was not yet set (i.e. by internal call in `setEmail()`), use nickname
         if (!$user->getUsername()) {
-            $user->setUsername($response->getNickname());
+            $user->setUsername($response->getEmail() ?: $response->getNickname());
         }
 
         // set random password to prevent issue with not nullable field & potential security hole

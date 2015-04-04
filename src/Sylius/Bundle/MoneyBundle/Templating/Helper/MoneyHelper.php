@@ -16,13 +16,6 @@ use Symfony\Component\Templating\Helper\Helper;
 class MoneyHelper extends Helper
 {
     /**
-     * The locale used to format money.
-     *
-     * @var string
-     */
-    private $locale;
-
-    /**
      * The default currency.
      *
      * @var string
@@ -30,32 +23,44 @@ class MoneyHelper extends Helper
     private $currency;
 
     /**
-     * @var \NumberFormatter
+     * @var string
      */
-    private $formatter;
+    private $locale;
 
+    /**
+     * @param string $locale   The locale used to format money.
+     * @param string $currency The default currency.
+     */
     public function __construct($locale, $currency)
     {
-        $this->locale = $locale;
+        $this->locale   = $locale ?: \Locale::getDefault();
         $this->currency = $currency;
-        $this->formatter = new \NumberFormatter($locale ?: \Locale::getDefault(), \NumberFormatter::CURRENCY);
     }
 
     /**
      * Format the money amount to nice display form.
      *
-     * @param integer     $amount
+     * @param int         $amount
      * @param string|null $currency
+     * @param bool        $decimal
+     * @param string|null $locale
      *
      * @return string
      *
      * @throws \InvalidArgumentException
      */
-    public function formatAmount($amount, $currency = null)
+    public function formatAmount($amount, $currency = null, $decimal = false, $locale = null)
     {
+        $locale   = $locale   ?: $this->getDefaultLocale();
         $currency = $currency ?: $this->getDefaultCurrency();
-        $result = $this->formatter->formatCurrency($amount / 100, $currency);
 
+        if ($decimal) {
+            $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
+        } else {
+            $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+        }
+
+        $result   = $formatter->formatCurrency($amount / 100, $currency);
         if (false === $result) {
             throw new \InvalidArgumentException(sprintf('The amount "%s" of type %s cannot be formatted to currency "%s".', $amount, gettype($amount), $currency));
         }
@@ -79,5 +84,15 @@ class MoneyHelper extends Helper
     protected function getDefaultCurrency()
     {
         return $this->currency;
+    }
+
+    /**
+     * Get the default locale if none is provided as argument.
+     *
+     * @return string The locale code
+     */
+    protected function getDefaultLocale()
+    {
+        return $this->locale;
     }
 }

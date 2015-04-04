@@ -24,6 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * It is fully decoupled, so you can integrate it into your existing project.
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
+ * @author Gonzalo Vilaseca <gvilaseca@reiss.co.uk>
  */
 class SyliusShippingBundle extends AbstractResourceBundle
 {
@@ -33,7 +34,7 @@ class SyliusShippingBundle extends AbstractResourceBundle
     public static function getSupportedDrivers()
     {
         return array(
-            SyliusResourceBundle::DRIVER_DOCTRINE_ORM
+            SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
         );
     }
 
@@ -46,14 +47,6 @@ class SyliusShippingBundle extends AbstractResourceBundle
 
         $container->addCompilerPass(new RegisterCalculatorsPass());
         $container->addCompilerPass(new RegisterRuleCheckersPass());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getBundlePrefix()
-    {
-        return 'sylius_shipping';
     }
 
     /**

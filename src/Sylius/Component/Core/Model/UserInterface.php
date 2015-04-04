@@ -13,7 +13,7 @@ namespace Sylius\Component\Core\Model;
 
 use Doctrine\Common\Collections\Collection;
 use FOS\UserBundle\Model\UserInterface as BaseUserInterface;
-use Sylius\Component\Addressing\Model\AddressInterface;
+use Sylius\Component\Rbac\Model\IdentityInterface;
 use Sylius\Component\Resource\Model\TimestampableInterface;
 
 /**
@@ -21,10 +21,12 @@ use Sylius\Component\Resource\Model\TimestampableInterface;
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
  */
-interface UserInterface extends BaseUserInterface, TimestampableInterface
+interface UserInterface extends BaseUserInterface, IdentityInterface, TimestampableInterface
 {
     /**
-     * Get first name
+     * Get first name.
+     *
+     * @return string
      */
     public function getFirstName();
 
@@ -36,26 +38,28 @@ interface UserInterface extends BaseUserInterface, TimestampableInterface
     public function setFirstName($firstName);
 
     /**
-     * Get last name
+     * Get last name.
+     *
+     * @return string
      */
     public function getLastName();
 
     /**
-     * Set last name
+     * Set last name.
      *
      * @param string $lastName
      */
     public function setLastName($lastName);
 
     /**
-     * Get currency
+     * Get currency.
      *
      * @return string
      */
     public function getCurrency();
 
     /**
-     * Set currency
+     * Set currency.
      *
      * @param string $currency
      */
@@ -64,7 +68,7 @@ interface UserInterface extends BaseUserInterface, TimestampableInterface
     /**
      * Get orders.
      *
-     * @return Collection|OrderInterface
+     * @return Collection|OrderInterface[]
      */
     public function getOrders();
 
@@ -122,7 +126,7 @@ interface UserInterface extends BaseUserInterface, TimestampableInterface
      *
      * @param AddressInterface $address
      *
-     * @return Boolean
+     * @return bool
      */
     public function hasAddress(AddressInterface $address);
 

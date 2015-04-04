@@ -21,19 +21,20 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 class DatabaseDriverFactory
 {
     public static function get(
-        $type = SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
         ContainerBuilder $container,
         $prefix,
         $resourceName,
+        $managerName,
+        $type = SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
         $templates = null
     ) {
         switch ($type) {
             case SyliusResourceBundle::DRIVER_DOCTRINE_ORM:
-                return new DoctrineORMDriver($container, $prefix, $resourceName, $templates);
+                return new DoctrineORMDriver($container, $prefix, $resourceName, $managerName, $templates);
             case SyliusResourceBundle::DRIVER_DOCTRINE_MONGODB_ODM:
-                return new DoctrineODMDriver($container, $prefix, $resourceName, $templates);
+                return new DoctrineODMDriver($container, $prefix, $resourceName, $managerName, $templates);
             case SyliusResourceBundle::DRIVER_DOCTRINE_PHPCR_ODM:
-                return new DoctrinePHPCRDriver($container, $prefix, $resourceName, $templates);
+                return new DoctrinePHPCRDriver($container, $prefix, $resourceName, $managerName, $templates);
             default:
                 throw new UnknownDriverException($type);
         }

@@ -14,8 +14,10 @@ namespace Sylius\Bundle\CoreBundle\Behat;
 use Behat\Gherkin\Node\TableNode;
 use Sylius\Bundle\ResourceBundle\Behat\DefaultContext;
 use Sylius\Component\Addressing\Model\AddressInterface;
+use Sylius\Component\Cart\SyliusCartEvents;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
@@ -23,6 +25,8 @@ use Sylius\Component\Core\Model\ShippingMethodInterface;
 use Sylius\Component\Core\Model\TaxRateInterface;
 use Sylius\Component\Core\Model\UserInterface;
 use Sylius\Component\Core\Pricing\Calculators as PriceCalculators;
+use Sylius\Component\Order\OrderTransitions;
+use Sylius\Component\Payment\Model\PaymentMethodInterface;
 use Sylius\Component\Shipping\Calculator\DefaultCalculators;
 use Sylius\Component\Shipping\ShipmentTransitions;
 use Symfony\Component\EventDispatcher\GenericEvent;
@@ -37,11 +41,11 @@ class CoreContext extends DefaultContext
     protected $orders = array();
 
     /**
-     * @Given /^I am logged in as administrator$/
+     * @Given I am logged in as :role
      */
-    public function iAmLoggedInAsAdministrator()
+    public function iAmLoggedInAsAuthorizationRole($role)
     {
-        $this->iAmLoggedInAsRole('ROLE_SYLIUS_ADMIN');
+        $this->iAmLoggedInAsRole('ROLE_ADMINISTRATION_ACCESS', 'sylius@example.com', array($role));
     }
 
     /**
@@ -54,6 +58,14 @@ class CoreContext extends DefaultContext
     }
 
     /**
+     * @Given /^I am not logged in$/
+     */
+    public function iAmNotLoggedIn()
+    {
+        $this->getSession()->visit($this->generatePageUrl('fos_user_security_logout'));
+    }
+
+    /**
      * @Given /^there are following orders:$/
      * @Given /^the following orders exist:$/
      * @Given /^there are orders:$/
@@ -62,8 +74,15 @@ class CoreContext extends DefaultContext
     public function thereAreOrders(TableNode $table)
     {
         $manager = $this->getEntityManager();
-        $orderRepository = $this->getRepository('order');
-        $shipmentProcessor = $this->getContainer()->get('sylius.processor.shipment_processor');
+        $finite  = $this->getService('sm.factory');
+        $orderRepository   = $this->getRepository('order');
+        $shipmentProcessor = $this->getService('sylius.processor.shipment_processor');
+
+        /** @var $paymentMethod PaymentMethodInterface */
+        $paymentMethod = $this->getRepository('payment_method')->createNew();
+        $paymentMethod->setName('Stripe');
+        $paymentMethod->setGateway('stripe');
+        $manager->persist($paymentMethod);
 
         $currentOrderNumber = 1;
         foreach ($table->getHash() as $data) {
@@ -81,9 +100,14 @@ class CoreContext extends DefaultContext
             }
 
             $order->setNumber(str_pad($currentOrderNumber, 9, 0, STR_PAD_LEFT));
-            $this->getService('event_dispatcher')->dispatch('sylius.order.pre_create', new GenericEvent($order));
+
+            $finite->get($order, OrderTransitions::GRAPH)->apply(OrderTransitions::SYLIUS_CREATE);
+
+            $this->createPayment($order, $paymentMethod);
 
             $order->setCurrency('EUR');
+            $order->setPaymentState(PaymentInterface::STATE_COMPLETED);
+
             $order->complete();
 
             $shipmentProcessor->updateShipmentStates($order->getShipments(), ShipmentTransitions::SYLIUS_PREPARE);
@@ -120,11 +144,14 @@ class CoreContext extends DefaultContext
             $order->addItem($item);
         }
 
+
         $order->calculateTotal();
         $order->complete();
 
         $this->getService('sylius.order_processing.payment_processor')->createPayment($order);
-        $this->getService('event_dispatcher')->dispatch('sylius.cart_change', new GenericEvent($order));
+        $this->getService('event_dispatcher')->dispatch(SyliusCartEvents::CART_CHANGE, new GenericEvent($order));
+
+        $order->setPaymentState(PaymentInterface::STATE_COMPLETED);
 
         $manager->persist($order);
         $manager->flush();
@@ -143,7 +170,9 @@ class CoreContext extends DefaultContext
                 isset($data['enabled']) ? $data['enabled'] : true,
                 isset($data['address']) && !empty($data['address']) ? $data['address'] : null,
                 isset($data['groups']) && !empty($data['groups']) ? explode(',', $data['groups']) : array(),
-                false
+                false,
+                array(),
+                isset($data['created at']) ? new \DateTime($data["created at"]) : null
             );
         }
 
@@ -193,7 +222,7 @@ class CoreContext extends DefaultContext
         $manager->flush();
     }
 
-    public function thereIsUser($email, $password, $role = null, $enabled = 'yes', $address = null, $groups = array(), $flush = true)
+    public function thereIsUser($email, $password, $role = null, $enabled = 'yes', $address = null, $groups = array(), $flush = true, array $authorizationRoles = array(), $createdAt = null)
     {
         if (null === $user = $this->getRepository('user')->findOneBy(array('email' => $email))) {
             $addressData = explode(',', $address);
@@ -201,12 +230,11 @@ class CoreContext extends DefaultContext
 
             /* @var $user UserInterface */
             $user = $this->getRepository('user')->createNew();
-            $user->setFirstname($this->faker->firstName);
-            $user->setLastname($this->faker->lastName);
             $user->setFirstname(null === $address ? $this->faker->firstName : $addressData[0]);
             $user->setLastname(null === $address ? $this->faker->lastName : $addressData[1]);
             $user->setEmail($email);
             $user->setEnabled('yes' === $enabled);
+            $user->setCreatedAt(null === $createdAt ? new \DateTime() : $createdAt);
             $user->setPlainPassword($password);
 
             if (null !== $address) {
@@ -223,6 +251,22 @@ class CoreContext extends DefaultContext
                 if ($group = $this->findOneByName('group', $groupName)) {
                     $user->addGroup($group);
                 }
+            }
+
+            foreach ($authorizationRoles as $role) {
+                try {
+                    $authorizationRole = $this->findOneByName('role', $role);
+                } catch (\InvalidArgumentException $exception) {
+                    $authorizationRole = $this->getService('sylius.repository.role')->createNew();
+
+                    $authorizationRole->setCode($role);
+                    $authorizationRole->setName(ucfirst($role));
+                    $authorizationRole->setSecurityRoles(array('ROLE_ADMINISTRATION_ACCESS'));
+
+                    $this->getEntityManager()->persist($authorizationRole);
+                }
+
+                $user->addAuthorizationRole($authorizationRole);
             }
 
             if ($flush) {
@@ -248,8 +292,8 @@ class CoreContext extends DefaultContext
 
         foreach ($table->getHash() as $data) {
             if (false !== strpos($data['range'], '+')) {
-                $min = null;
-                $max = (int) trim(str_replace('+', '', $data['range']));
+                $min = (int) trim(str_replace('+', '', $data['range']));
+                $max = null;
             } else {
                 list($min, $max) = array_map(function ($value) { return (int) trim($value); }, explode('-', $data['range']));
             }
@@ -257,7 +301,7 @@ class CoreContext extends DefaultContext
             $configuration[] = array(
                 'min'   => $min,
                 'max'   => $max,
-                'price' => (int) $data['price'] * 100
+                'price' => (int) ($data['price'] * 100)
             );
         }
 
@@ -340,7 +384,11 @@ class CoreContext extends DefaultContext
             $calculator = array_key_exists('calculator', $data) ? str_replace(' ', '_', strtolower($data['calculator'])) : DefaultCalculators::PER_ITEM_RATE;
             $configuration = array_key_exists('configuration', $data) ? $this->getConfiguration($data['configuration']) : null;
 
-            $this->thereIsShippingMethod($data['name'], $data['zone'], $calculator, $configuration, false);
+            if (!isset($data['enabled'])) {
+                $data['enabled'] = 'yes';
+            }
+
+            $this->thereIsShippingMethod($data['name'], $data['zone'], $calculator, $configuration, 'yes' === $data['enabled'], false);
         }
 
         $this->getEntityManager()->flush();
@@ -350,7 +398,7 @@ class CoreContext extends DefaultContext
      * @Given /^I created shipping method "([^""]*)" within zone "([^""]*)"$/
      * @Given /^There is shipping method "([^""]*)" within zone "([^""]*)"$/
      */
-    public function thereIsShippingMethod($name, $zoneName, $calculator = DefaultCalculators::PER_ITEM_RATE, array $configuration = null, $flush = true)
+    public function thereIsShippingMethod($name, $zoneName, $calculator = DefaultCalculators::PER_ITEM_RATE, array $configuration = null, $enabled = true, $flush = true)
     {
         /* @var $method ShippingMethodInterface */
         $method = $this
@@ -362,6 +410,7 @@ class CoreContext extends DefaultContext
         $method->setZone($this->findOneByName('zone', $zoneName));
         $method->setCalculator($calculator);
         $method->setConfiguration($configuration ?: array('amount' => 2500));
+        $method->setEnabled($enabled);
 
         $manager = $this->getEntityManager();
         $manager->persist($method);
@@ -441,6 +490,25 @@ class CoreContext extends DefaultContext
     }
 
     /**
+     * Create an payment instance.
+     *
+     * @param OrderInterface         $order
+     * @param PaymentMethodInterface $method
+     */
+    private function createPayment(OrderInterface $order, PaymentMethodInterface $method)
+    {
+        /** @var $payment PaymentInterface */
+        $payment = $this->getRepository('payment')->createNew();
+        $payment->setOrder($order);
+        $payment->setMethod($method);
+        $payment->setAmount($order->getTotal());
+        $payment->setCurrency($order->getCurrency() ?: 'EUR');
+        $payment->setState(PaymentInterface::STATE_COMPLETED);
+
+        $order->addPayment($payment);
+    }
+
+    /**
      * Create an shipment instance from string.
      *
      * @param string $string
@@ -473,10 +541,11 @@ class CoreContext extends DefaultContext
      *
      * @param string $role
      * @param string $email
+     * @param array  $authorizationRoles
      */
-    private function iAmLoggedInAsRole($role, $email = 'sylius@example.com')
+    private function iAmLoggedInAsRole($role, $email = 'sylius@example.com', array $authorizationRoles = array())
     {
-        $this->thereIsUser($email, 'sylius', $role);
+        $this->thereIsUser($email, 'sylius', null, 'yes', null, array(), true, $authorizationRoles);
         $this->getSession()->visit($this->generatePageUrl('fos_user_security_login'));
 
         $this->fillField('Email', $email);

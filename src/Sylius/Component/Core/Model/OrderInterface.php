@@ -12,9 +12,8 @@
 namespace Sylius\Component\Core\Model;
 
 use Doctrine\Common\Collections\Collection;
-use Sylius\Component\Addressing\Model\AddressInterface;
 use Sylius\Component\Cart\Model\CartInterface;
-use Sylius\Component\Order\Model\AdjustmentInterface;
+use Sylius\Component\Core\Model\IdentityInterface;
 use Sylius\Component\Payment\Model\PaymentsSubjectInterface;
 use Sylius\Component\Promotion\Model\CouponInterface as BaseCouponInterface;
 use Sylius\Component\Promotion\Model\PromotionCountableSubjectInterface;
@@ -25,26 +24,14 @@ use Sylius\Component\Promotion\Model\PromotionCouponsAwareSubjectInterface;
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
  */
-interface OrderInterface extends CartInterface, PaymentsSubjectInterface, PromotionCountableSubjectInterface, PromotionCouponsAwareSubjectInterface
+interface OrderInterface extends CartInterface, PaymentsSubjectInterface, PromotionCountableSubjectInterface, PromotionCouponsAwareSubjectInterface, UserAwareInterface
 {
-    // Labels for tax, shipping and promotion adjustments.
-    const TAX_ADJUSTMENT       = 'tax';
-    const SHIPPING_ADJUSTMENT  = 'shipping';
-    const PROMOTION_ADJUSTMENT = 'promotion';
-
-    /**
-     * Get user.
-     *
-     * @return UserInterface
-     */
-    public function getUser();
-
-    /**
-     * Set user.
-     *
-     * @param UserInterface $user
-     */
-    public function setUser(UserInterface $user);
+    const CHECKOUT_STATE_CART       = 'cart';
+    const CHECKOUT_STATE_ADDRESSING = 'addressing';
+    const CHECKOUT_STATE_SHIPPING   = 'shipping';
+    const CHECKOUT_STATE_PAYMENT    = 'payment';
+    const CHECKOUT_STATE_FINALIZE   = 'finalize';
+    const CHECKOUT_STATE_COMPLETED  = 'completed';
 
     /**
      * Get shipping address.
@@ -75,61 +62,18 @@ interface OrderInterface extends CartInterface, PaymentsSubjectInterface, Promot
     public function setBillingAddress(AddressInterface $address);
 
     /**
-     * Get the tax total.
+     * Get the checkout state.
      *
-     * @return float
+     * @return string
      */
-    public function getTaxTotal();
+    public function getCheckoutState();
 
     /**
-     * Get all tax adjustments.
+     * Set the checkout state.
      *
-     * @return Collection|AdjustmentInterface[]
+     * @param string $
      */
-    public function getTaxAdjustments();
-
-    /**
-     * Remove all tax adjustments.
-     */
-    public function removeTaxAdjustments();
-
-    /**
-     * Get the promotion total.
-     *
-     * @return float
-     */
-    public function getPromotionTotal();
-
-    /**
-     * Get all promotion adjustments.
-     *
-     * @return Collection|AdjustmentInterface[]
-     */
-    public function getPromotionAdjustments();
-
-    /**
-     * Remove all promotion adjustments.
-     */
-    public function removePromotionAdjustments();
-
-    /**
-     * Get shipping total.
-     *
-     * @return float
-     */
-    public function getShippingTotal();
-
-    /**
-     * Get all shipping adjustments.
-     *
-     * @return Collection|AdjustmentInterface[]
-     */
-    public function getShippingAdjustments();
-
-    /**
-     * Remove all shipping adjustments.
-     */
-    public function removeShippingAdjustments();
+    public function setCheckoutState($checkoutState);
 
     /**
      * Get the payment state.
@@ -268,7 +212,7 @@ interface OrderInterface extends CartInterface, PaymentsSubjectInterface, Promot
      *
      * @param $state
      *
-     * @return PaymentInterface
+     * @return PaymentInterface|false
      */
     public function getLastPayment($state = PaymentInterface::STATE_NEW);
 
@@ -278,4 +222,7 @@ interface OrderInterface extends CartInterface, PaymentsSubjectInterface, Promot
      * @return bool
      */
     public function isInvoiceAvailable();
+
+
+
 }

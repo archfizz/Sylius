@@ -17,13 +17,14 @@ use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Sylius\Bundle\ResourceBundle\Behat\DefaultContext;
 use Symfony\Component\Intl\Intl;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Behat\Behat\Context\SnippetAcceptingContext;
 
 /**
  * Web context.
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
  */
-class WebContext extends DefaultContext
+class WebContext extends DefaultContext implements SnippetAcceptingContext
 {
     /**
      * @Given /^go to "([^""]*)" tab$/
@@ -110,7 +111,7 @@ class WebContext extends DefaultContext
      */
     public function iAmOnMyAccountPasswordPage()
     {
-        $this->getSession()->visit($this->generatePageUrl('fos_user_change_password'));
+        $this->getSession()->visit($this->generatePageUrl('sylius_account_change_password'));
     }
 
     /**
@@ -118,7 +119,7 @@ class WebContext extends DefaultContext
      */
     public function iShouldBeOnMyAccountPasswordPage()
     {
-        $this->assertSession()->addressEquals($this->generateUrl('fos_user_change_password'));
+        $this->assertSession()->addressEquals($this->generateUrl('sylius_account_change_password'));
     }
 
     /**
@@ -126,7 +127,7 @@ class WebContext extends DefaultContext
      */
     public function iShouldStillBeOnMyAccountPasswordPage()
     {
-        $this->assertSession()->addressEquals($this->generateUrl('fos_user_change_password'));
+        $this->assertSession()->addressEquals($this->generateUrl('sylius_account_change_password'));
     }
 
     /**
@@ -134,7 +135,7 @@ class WebContext extends DefaultContext
      */
     public function iAmOnMyAccountProfileEditionPage()
     {
-        $this->getSession()->visit($this->generatePageUrl('fos_user_profile_edit'));
+        $this->getSession()->visit($this->generatePageUrl('sylius_account_profile_edit'));
     }
 
     /**
@@ -142,7 +143,7 @@ class WebContext extends DefaultContext
      */
     public function iShouldBeOnMyProfileEditionPage()
     {
-        $this->assertSession()->addressEquals($this->generateUrl('fos_user_profile_edit'));
+        $this->assertSession()->addressEquals($this->generateUrl('sylius_account_profile_edit'));
     }
 
     /**
@@ -150,15 +151,7 @@ class WebContext extends DefaultContext
      */
     public function iShouldStillBeOnMyProfileEditionPage()
     {
-        $this->assertSession()->addressEquals($this->generateUrl('fos_user_profile_edit'));
-    }
-
-    /**
-     * @Given /^I should be on my account profile page$/
-     */
-    public function iShouldBeOnMyProfilePage()
-    {
-        $this->assertSession()->addressEquals($this->generateUrl('fos_user_profile_show'));
+        $this->assertSession()->addressEquals($this->generateUrl('sylius_account_profile_edit'));
     }
 
     /**
@@ -266,7 +259,10 @@ class WebContext extends DefaultContext
     {
         $type = str_replace(' ', '_', $type);
 
+        $entityManager = $this->getEntityManager();
+        $entityManager->getFilters()->disable('softdeleteable');
         $resource = $this->findOneBy($type, array($property => $value));
+        $entityManager->getFilters()->enable('softdeleteable');
 
         $this->getSession()->visit($this->generatePageUrl(sprintf('backend_%s_show', $type), array('id' => $resource->getId())));
     }
@@ -299,7 +295,11 @@ class WebContext extends DefaultContext
     public function iShouldBeOnTheResourcePage($type, $property, $value)
     {
         $type = str_replace(' ', '_', $type);
+
+        $entityManager = $this->getEntityManager();
+        $entityManager->getFilters()->disable('softdeleteable');
         $resource = $this->findOneBy($type, array($property => $value));
+        $entityManager->getFilters()->enable('softdeleteable');
 
         $this->assertSession()->addressEquals($this->generatePageUrl(sprintf('backend_%s_show', $type), array('id' => $resource->getId())));
         $this->assertStatusCodeEquals(200);
@@ -496,6 +496,39 @@ class WebContext extends DefaultContext
     }
 
     /**
+     * @Then I should not see :position in the menu
+     */
+    public function iShouldNotSeeInTheMenu($position)
+    {
+        $this->assertSession()->elementNotContains('css', sprintf('.sidebar-nav'), $position);
+    }
+
+    /**
+     * @Then I should see :position in the menu
+     */
+    public function iShouldSeeInTheMenu($position)
+    {
+        $this->assertSession()->elementContains('css', sprintf('.sidebar-nav'), $position);
+    }
+
+    /**
+     * @Then I should not see :button button
+     */
+    public function iShouldNotSeeButton($button)
+    {
+        $this->assertSession()->elementNotExists('css', '.delete-action-form input[value="'.strtoupper($button).'"]');
+    }
+
+    /**
+     * @Then I should not see :button button near :user in :table table
+     */
+    public function iShouldNotSeeButtonInColumnInTable($button, $user, $table)
+    {   
+        $this->assertSession()->elementExists('css', "#".$table." tr[data-user='$user']");
+        $this->assertSession()->elementNotExists('css', "#".$table." tr[data-user='$user'] form input[value=".strtoupper($button)."]");
+    }
+
+    /**
      * @When /^I click "([^"]*)" near "([^"]*)"$/
      * @When /^I press "([^"]*)" near "([^"]*)"$/
      */
@@ -585,7 +618,7 @@ class WebContext extends DefaultContext
                 $text = 'Witaj w Sylius';
             break;
             case 'German':
-                $text = 'Willkommen bei Sylius';
+                $text = 'Englisch';
             break;
         }
 
@@ -835,5 +868,59 @@ class WebContext extends DefaultContext
     protected function assertStatusCodeEquals($code)
     {
         $this->assertSession()->statusCodeEquals($code);
+    }
+
+    /**
+     * @Given /^I wait (\d+) (seconds|second)$/
+     */
+    public function iWait($time)
+    {
+        $this->getSession()->wait($time*1000);
+    }
+
+    /**
+     * @Given I deleted :type with :property :value
+     */
+    public function iDeletedResource($type, $property, $value)
+    {
+        $user = $this->findOneBy($type, array($property => $value));
+        $entityManager = $this->getEntityManager();
+        $entityManager->remove($user);
+        $entityManager->flush();
+    }
+
+    /**
+     * @Given I view deleted elements
+     */
+    public function iViewDeletedElements()
+    {
+        $this->clickLink('Show deleted');
+    }
+    
+    /**
+     * @Then I should see table of :id sorted by lastName
+     */
+    public function iShouldSeeTableSortedByLastName($id)
+    {
+        $allNames = $this->getSession()->getPage()->findAll('css', '#'.$id.' > tbody > tr > td > p');
+        $allSurnames = array();
+        
+        foreach ($allNames as $name){
+            $spacePosition = strpos($name->getText(), ' ');
+            $surname = substr($name->getText(), $spacePosition + 1);
+            $allSurnames[] .= $surname;
+        }
+        
+        sort($allSurnames);
+        
+        $this->assertSession()->elementTextContains('css', '#'.$id.' > tbody > tr > td > p', $allSurnames[0]);
+    }
+
+    /**
+     * @Then I should have my access denied
+     */
+    public function iShouldHaveMyAccessDenied()
+    {
+        $this->assertStatusCodeEquals(403);
     }
 }

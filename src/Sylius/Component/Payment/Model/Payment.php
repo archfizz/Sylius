@@ -174,6 +174,9 @@ class Payment implements PaymentInterface
      */
     public function setAmount($amount)
     {
+        if (!is_int($amount)) {
+            throw new \InvalidArgumentException('Amount must be an integer.');
+        }
         $this->amount = $amount;
 
         return $this;
@@ -242,7 +245,7 @@ class Payment implements PaymentInterface
             $details = iterator_to_array($details);
         }
 
-        if (false == is_array($details)) {
+        if (!is_array($details)) {
             throw new UnexpectedTypeException($details, 'array');
         }
 

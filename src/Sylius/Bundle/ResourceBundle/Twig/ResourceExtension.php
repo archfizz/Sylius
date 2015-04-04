@@ -92,7 +92,7 @@ class ResourceExtension extends \Twig_Extension
      */
     public function fetchRequest(GetResponseEvent $event)
     {
-        if (HttpKernel::MASTER_REQUEST != $event->getRequestType()) {
+        if (HttpKernel::MASTER_REQUEST !== $event->getRequestType()) {
             return;
         }
 
@@ -110,6 +110,10 @@ class ResourceExtension extends \Twig_Extension
      */
     public function renderSortingLink(\Twig_Environment $twig, $property, $label = null, $order = 'asc', array $options = array())
     {
+        if (null === $label) {
+            $label = $property;
+        }
+
         if (false === $this->parameters->get('sortable')) {
             return $label;
         }
@@ -119,7 +123,7 @@ class ResourceExtension extends \Twig_Extension
         }
 
         $options = $this->getOptions($options, $this->sortingTemplate);
-        $sorting = $this->parameters->get('sorting', array('id' => 'asc'));
+        $sorting = $this->request->query->get($this->getParameterName('sorting'), $this->parameters->get($this->getParameterName('sorting'), array('id' => 'asc')));
         $currentOrder = null;
 
         if (isset($sorting[$property])) {
@@ -137,7 +141,7 @@ class ResourceExtension extends \Twig_Extension
 
         return $twig->render($options['template'], array(
             'url'          => $url,
-            'label'        => null === $label ? $property : $label,
+            'label'        => $label,
             'icon'         => $property == key($sorting),
             'currentOrder' => $currentOrder,
         ));
@@ -250,7 +254,7 @@ class ResourceExtension extends \Twig_Extension
     private function getParameterName($key)
     {
         $parameterName = $this->parameters->get('parameter_name');
-        if (isset($parameterName[$key])) {
+        if (isset($parameterName[$key]) && !is_array($parameterName[$key])) {
             return $parameterName[$key];
         }
 

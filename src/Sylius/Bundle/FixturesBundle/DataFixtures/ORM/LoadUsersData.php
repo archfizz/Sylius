@@ -22,25 +22,35 @@ use Sylius\Component\Core\Model\UserInterface;
  */
 class LoadUsersData extends DataFixture
 {
+    private $usernames = array();
+
     /**
      * {@inheritdoc}
      */
     public function load(ObjectManager $manager)
     {
+        $rbacInitializer = $this->get('sylius.rbac.initializer');
+        $rbacInitializer->initialize();
+
         $user = $this->createUser(
             'sylius@example.com',
             'sylius',
             true,
             array('ROLE_SYLIUS_ADMIN')
         );
+        $user->addAuthorizationRole($this->get('sylius.repository.role')->findOneBy(array('code' => 'administrator')));
 
         $manager->persist($user);
         $manager->flush();
 
         $this->setReference('Sylius.User-Administrator', $user);
 
-        for ($i = 1; $i <= 15; $i++) {
+        for ($i = 1; $i <= 200; $i++) {
             $username = $this->faker->username;
+
+            while (isset($this->usernames[$username])) {
+                $username = $this->faker->username;
+            }
 
             $user = $this->createUser(
                 $username.'@example.com',
@@ -48,7 +58,10 @@ class LoadUsersData extends DataFixture
                 $this->faker->boolean()
             );
 
+            $user->setCreatedAt($this->faker->dateTimeThisMonth);
+
             $manager->persist($user);
+            $this->usernames[$username] = true;
 
             $this->setReference('Sylius.User-'.$i, $user);
         }
@@ -79,6 +92,7 @@ class LoadUsersData extends DataFixture
         $user = $this->getUserRepository()->createNew();
         $user->setFirstname($this->faker->firstName);
         $user->setLastname($this->faker->lastName);
+        $user->setUsername($email);
         $user->setEmail($email);
         $user->setPlainPassword($password);
         $user->setRoles($roles);

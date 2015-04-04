@@ -18,6 +18,7 @@ use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
  * Sylius addressing and zones management bundle.
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
+ * @author Gonzalo Vilaseca <gvilaseca@reiss.co.uk>
  */
 class SyliusAddressingBundle extends AbstractResourceBundle
 {
@@ -27,16 +28,8 @@ class SyliusAddressingBundle extends AbstractResourceBundle
     public static function getSupportedDrivers()
     {
         return array(
-            SyliusResourceBundle::DRIVER_DOCTRINE_ORM
+            SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
         );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getBundlePrefix()
-    {
-        return 'sylius_addressing';
     }
 
     /**

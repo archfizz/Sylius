@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\ApiBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -35,7 +36,7 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->scalarNode('driver')->isRequired()->cannotBeEmpty()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
             ->end()
         ;
 
@@ -91,6 +92,12 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('classes')
                     ->isRequired()
                     ->children()
+                        ->arrayNode('api')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ApiBundle\Controller\IndexController')->end()
+                            ->end()
+                        ->end()
                         ->arrayNode('api_user')
                             ->isRequired()
                             ->children()

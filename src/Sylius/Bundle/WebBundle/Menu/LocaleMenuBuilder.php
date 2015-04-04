@@ -13,7 +13,8 @@ namespace Sylius\Bundle\WebBundle\Menu;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
-use Sylius\Component\Locale\Provider\LocaleProviderInterface;
+use Sylius\Bundle\LocaleBundle\Provider\LocaleProviderInterface;
+use Sylius\Component\Rbac\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Intl\Intl;
 use Symfony\Component\Security\Core\SecurityContextInterface;
@@ -47,9 +48,10 @@ class LocaleMenuBuilder extends MenuBuilder
         SecurityContextInterface  $securityContext,
         TranslatorInterface       $translator,
         EventDispatcherInterface  $eventDispatcher,
-        LocaleProviderInterface   $localeProvider
+        LocaleProviderInterface   $localeProvider,
+        AuthorizationCheckerInterface $authorizationChecker
     ) {
-        parent::__construct($factory, $securityContext, $translator, $eventDispatcher);
+        parent::__construct($factory, $securityContext, $translator, $eventDispatcher, $authorizationChecker);
 
         $this->localeProvider = $localeProvider;
     }
@@ -61,13 +63,20 @@ class LocaleMenuBuilder extends MenuBuilder
      */
     public function createMenu()
     {
+        $locales = $this->localeProvider->getAvailableLocales();
         $menu = $this->factory->createItem('root', array(
             'childrenAttributes' => array(
                 'class' => 'nav nav-pills'
             )
         ));
 
-        foreach ($this->localeProvider->getAvailableLocales() as $locale) {
+        if (1 === count($locales)) {
+            $menu->setDisplay(false);
+
+            return $menu;
+        }
+
+        foreach ($locales as $locale) {
             $code = $locale->getCode();
 
             $menu->addChild($code, array(

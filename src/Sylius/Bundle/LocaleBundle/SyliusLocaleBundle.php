@@ -11,46 +11,42 @@
 
 namespace Sylius\Bundle\LocaleBundle;
 
-use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
-use Sylius\Bundle\ResourceBundle\DependencyInjection\Compiler\ResolveDoctrineTargetEntitiesPass;
+use Sylius\Bundle\ResourceBundle\AbstractResourceBundle;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
  * Locale bundle.
  *
  * @author Paweł Jędrzejewski <pjedrzejewski@sylius.pl>
  */
-class SyliusLocaleBundle extends Bundle
+class SyliusLocaleBundle extends AbstractResourceBundle
 {
     /**
-     * Return array of currently supported drivers.
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public static function getSupportedDrivers()
     {
         return array(
-            SyliusResourceBundle::DRIVER_DOCTRINE_ORM
+            SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
+            SyliusResourceBundle::DRIVER_DOCTRINE_MONGODB_ODM,
         );
     }
 
     /**
      * {@inheritdoc}
      */
-    public function build(ContainerBuilder $container)
+    protected function getModelInterfaces()
     {
-        $interfaces = array(
+        return array(
             'Sylius\Component\Locale\Model\LocaleInterface' => 'sylius.model.locale.class',
         );
+    }
 
-        $container->addCompilerPass(new ResolveDoctrineTargetEntitiesPass('sylius_locale', $interfaces));
-
-        $mappings = array(
-            realpath(__DIR__ . '/Resources/config/doctrine/model') => 'Sylius\Component\Locale\Model',
-        );
-
-        $container->addCompilerPass(DoctrineOrmMappingsPass::createXmlMappingDriver($mappings, array('doctrine.orm.entity_manager'), 'sylius_locale.driver.doctrine/orm'));
+    /**
+     * {@inheritdoc}
+     */
+    protected function getModelNamespace()
+    {
+        return 'Sylius\Component\Locale\Model';
     }
 }

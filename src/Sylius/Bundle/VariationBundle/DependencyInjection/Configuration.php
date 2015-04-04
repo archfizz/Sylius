@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\VariationBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -36,7 +37,7 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')->defaultNull()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
             ->end()
         ;
 
@@ -64,6 +65,10 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue(array('sylius'))
                             ->end()
                             ->arrayNode('option')
+                                ->prototype('scalar')->end()
+                                ->defaultValue(array('sylius'))
+                            ->end()
+                            ->arrayNode('option_translation')
                                 ->prototype('scalar')->end()
                                 ->defaultValue(array('sylius'))
                             ->end()
@@ -109,6 +114,29 @@ class Configuration implements ConfigurationInterface
                                     ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                     ->scalarNode('repository')->cannotBeEmpty()->end()
                                     ->scalarNode('form')->defaultValue('Sylius\Bundle\VariationBundle\Form\Type\OptionType')->end()
+                                    ->arrayNode('translation')
+                                        ->addDefaultsIfNotSet()
+                                        ->children()
+                                            ->scalarNode('model')->defaultValue('Sylius\Component\Variation\Model\OptionTranslation')->end()
+                                            ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
+                                            ->scalarNode('repository')->end()
+                                            ->arrayNode('form')
+                                                ->addDefaultsIfNotSet()
+                                                ->children()
+                                                    ->scalarNode('default')->defaultValue('Sylius\Bundle\VariationBundle\Form\Type\OptionTranslationType')->end()
+                                                ->end()
+                                            ->end()
+                                            ->arrayNode('mapping')
+                                                ->addDefaultsIfNotSet()
+                                                ->children()
+                                                    ->arrayNode('fields')
+                                                        ->prototype('scalar')->end()
+                                                        ->defaultValue(array('presentation'))
+                                                    ->end()
+                                                ->end()
+                                            ->end()
+                                        ->end()
+                                    ->end()
                                 ->end()
                             ->end()
                             ->arrayNode('option_value')

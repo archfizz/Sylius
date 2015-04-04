@@ -13,9 +13,10 @@ namespace Sylius\Bundle\AddressingBundle\DependencyInjection;
 
 use Sylius\Bundle\ResourceBundle\DependencyInjection\AbstractResourceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-
+use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\DependencyInjection\Parameter;
 /**
- * Addressing system extension.
+ * Addressing extension.
  *
  * @author Paweł Jędrzejewski <pjedrzejewski@sylius.pl>
  * @author Gonzalo Vilaseca <gvilaseca@reiss.co.uk>
@@ -27,8 +28,37 @@ class SyliusAddressingExtension extends AbstractResourceExtension
      */
     public function load(array $config, ContainerBuilder $container)
     {
-        list($config, $loader) = $this->configure($config, new Configuration(), $container, self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE | self::CONFIGURE_PARAMETERS | self::CONFIGURE_VALIDATORS);
+        list($config) = $this->configure(
+            $config,
+            new Configuration(),
+            $container,
+            self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE | self::CONFIGURE_PARAMETERS | self::CONFIGURE_VALIDATORS | self::CONFIGURE_FORMS | self::CONFIGURE_TRANSLATIONS
+        );
 
         $container->setParameter('sylius.scope.zone', $config['scopes']);
+
+        $container
+            ->getDefinition('sylius.form.type.province_choice')
+            ->setArguments(array(
+                new Reference('sylius.repository.province')
+            ))
+        ;
+
+        $container
+            ->getDefinition('sylius.form.type.province_choice')
+            ->setArguments(array(
+                new Reference('sylius.repository.province')
+            ))
+        ;
+
+        $container
+            ->getDefinition('sylius.form.type.address')
+            ->addArgument(new Reference('sylius.form.listener.address'))
+        ;
+
+        $container
+            ->getDefinition('sylius.form.type.zone')
+            ->addArgument(new Parameter('sylius.scope.zone'))
+        ;
     }
 }

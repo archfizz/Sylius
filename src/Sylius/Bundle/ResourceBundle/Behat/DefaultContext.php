@@ -12,11 +12,9 @@
 namespace Sylius\Bundle\ResourceBundle\Behat;
 
 use Behat\Behat\Context\Context;
-use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\MinkExtension\Context\RawMinkContext;
 use Behat\Symfony2Extension\Context\KernelAwareContext;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\Common\Persistence\ObjectManager;
 use Faker\Factory as FakerFactory;
 use Faker\Generator;
@@ -63,15 +61,6 @@ abstract class DefaultContext extends RawMinkContext implements Context, KernelA
     public function setKernel(KernelInterface $kernel)
     {
         $this->kernel = $kernel;
-    }
-
-    /**
-     * @BeforeScenario
-     */
-    public function purgeDatabase(BeforeScenarioScope $scope)
-    {
-        $purger = new ORMPurger($this->getService('doctrine.orm.entity_manager'));
-        $purger->purge();
     }
 
     /**
@@ -170,7 +159,7 @@ abstract class DefaultContext extends RawMinkContext implements Context, KernelA
         $list = explode(',', $configurationString);
 
         foreach ($list as $parameter) {
-            list($key, $value) = explode(':', $parameter);
+            list($key, $value) = explode(':', $parameter, 2);
             $key = strtolower(trim(str_replace(' ', '_', $key)));
 
             switch ($key) {
@@ -184,6 +173,10 @@ abstract class DefaultContext extends RawMinkContext implements Context, KernelA
 
                 case 'variant':
                     $configuration[$key] = $this->getRepository('product')->findOneBy(array('name' => trim($value)))->getMasterVariant()->getId();
+                    break;
+
+                case 'amount':
+                    $configuration[$key] = (int) $value;
                     break;
 
                 default:

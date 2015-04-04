@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\OrderBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -36,7 +37,14 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')->isRequired()->cannotBeEmpty()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
+                ->booleanNode('guest_order')
+                    ->beforeNormalization()
+                        ->ifString()
+                        ->then(function ($v) { return (bool) $v; })
+                    ->end()
+                    ->defaultFalse()
+                ->end()
             ->end()
         ;
 
@@ -67,6 +75,10 @@ class Configuration implements ConfigurationInterface
                             ->defaultValue(array('sylius'))
                         ->end()
                         ->arrayNode('adjustment')
+                            ->prototype('scalar')->end()
+                            ->defaultValue(array('sylius'))
+                        ->end()
+                        ->arrayNode('comment')
                             ->prototype('scalar')->end()
                             ->defaultValue(array('sylius'))
                         ->end()
@@ -101,18 +113,34 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Order\Model\OrderItem')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\OrderBundle\Controller\OrderItemController')->end()
                                 ->scalarNode('repository')->cannotBeEmpty()->end()
                                 ->scalarNode('form')->defaultValue('Sylius\Bundle\OrderBundle\Form\Type\OrderItemType')->end()
                             ->end()
                         ->end()
+                        ->arrayNode('order_identity')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                            ->scalarNode('model')->defaultValue('Sylius\Component\Order\Model\Identity')->end()
+                            ->end()
+                        ->end()
+
                         ->arrayNode('adjustment')
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Order\Model\Adjustment')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\OrderBundle\Controller\AdjustmentController')->end()
                                 ->scalarNode('repository')->cannotBeEmpty()->end()
                                 ->scalarNode('form')->defaultValue('Sylius\Bundle\OrderBundle\Form\Type\AdjustmentType')->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('comment')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('model')->defaultValue('Sylius\Component\Order\Model\Comment')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\OrderBundle\Controller\CommentController')->end()
+                                ->scalarNode('repository')->cannotBeEmpty()->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\OrderBundle\Form\Type\CommentType')->end()
                             ->end()
                         ->end()
                     ->end()

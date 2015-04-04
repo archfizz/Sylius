@@ -31,12 +31,13 @@ class AddressController extends FOSRestController
     /**
      * Get collection of user's addresses.
      */
-    public function indexAction(Request $request)
+    public function indexAction()
     {
         $view = $this
             ->view()
             ->setTemplate('SyliusWebBundle:Frontend/Account:Address/index.html.twig')
             ->setData(array(
+                'user' => $this->getUser(),
                 'addresses' => $this->getUser()->getAddresses(),
             ))
         ;
@@ -163,12 +164,18 @@ class AddressController extends FOSRestController
         return $this->redirectToIndex();
     }
 
+    protected function addFlash($type, $message)
+    {
+        $translator = $this->get('translator');
+        $this->get('session')->getFlashBag()->add($type, $translator->trans($message, array(), 'flashes'));
+    }
+
     /**
      * @param AddressInterface $address
      *
      * @return FormInterface
      */
-    private function getAddressForm(AddressInterface $address)
+    protected function getAddressForm(AddressInterface $address)
     {
         return $this->get('form.factory')->create('sylius_address', $address);
     }
@@ -176,7 +183,7 @@ class AddressController extends FOSRestController
     /**
      * @return ObjectManager
      */
-    private function getUserManager()
+    protected function getUserManager()
     {
         return $this->get('sylius.manager.user');
     }
@@ -184,20 +191,14 @@ class AddressController extends FOSRestController
     /**
      * @return RepositoryInterface
      */
-    private function getAddressRepository()
+    protected function getAddressRepository()
     {
         return $this->get('sylius.repository.address');
     }
 
-    private function redirectToIndex()
+    protected function redirectToIndex()
     {
         return $this->redirect($this->generateUrl('sylius_account_address_index'));
-    }
-
-    private function addFlash($type, $message)
-    {
-        $translator = $this->get('translator');
-        $this->get('session')->getFlashBag()->add($type, $translator->trans($message, array(), 'flashes'));
     }
 
     /**
@@ -210,7 +211,7 @@ class AddressController extends FOSRestController
      * @throws NotFoundHttpException
      * @throws AccessDeniedException
      */
-    private function findUserAddressOr404($id)
+    protected function findUserAddressOr404($id)
     {
         if (!$address = $this->getAddressRepository()->find($id)) {
             throw new NotFoundHttpException('Requested address does not exist.');

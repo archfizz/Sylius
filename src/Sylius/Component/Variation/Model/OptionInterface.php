@@ -22,8 +22,15 @@ use Sylius\Component\Resource\Model\TimestampableInterface;
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
  */
-interface OptionInterface extends TimestampableInterface
+interface OptionInterface extends TimestampableInterface, OptionTranslationInterface
 {
+    /**
+     * Get id.
+     *
+     * @return int
+     */
+    public function getId();
+    
     /**
      * Get internal name.
      *
@@ -43,20 +50,6 @@ interface OptionInterface extends TimestampableInterface
      * @param string $name
      */
     public function setName($name);
-
-    /**
-     * The name displayed to user.
-     *
-     * @return string
-     */
-    public function getPresentation();
-
-    /**
-     * Set presentation.
-     *
-     * @param string $presentation
-     */
-    public function setPresentation($presentation);
 
     /**
      * Returns all option values.

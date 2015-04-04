@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 
 /**
- * Sylius attributes system extension.
+ * Attribute extension.
  *
  * @author Paweł Jędrzejewski <pawel@sylius.org>
  */
@@ -28,7 +28,11 @@ class SyliusAttributeExtension extends AbstractResourceExtension
      */
     public function load(array $config, ContainerBuilder $container)
     {
-        $this->configure($config, new Configuration(), $container, self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE | self::CONFIGURE_PARAMETERS | self::CONFIGURE_VALIDATORS);
+        $this->configure(
+            $config, new Configuration(),
+            $container,
+            self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE | self::CONFIGURE_PARAMETERS | self::CONFIGURE_VALIDATORS | self::CONFIGURE_TRANSLATIONS
+        );
     }
 
     /**
@@ -36,8 +40,8 @@ class SyliusAttributeExtension extends AbstractResourceExtension
      */
     public function process(array $config, ContainerBuilder $container)
     {
-        $convertedConfig = array();
         $subjects = array();
+        $convertedConfig = array();
 
         foreach ($config['classes'] as $subject => $parameters) {
             $subjects[$subject] = $parameters;
@@ -51,6 +55,9 @@ class SyliusAttributeExtension extends AbstractResourceExtension
 
             if (!isset($config['validation_groups'][$subject]['attribute'])) {
                 $config['validation_groups'][$subject]['attribute'] = array('sylius');
+            }
+            if (!isset($config['validation_groups'][$subject]['attribute_translation'])) {
+                $config['validation_groups'][$subject]['attribute_translation'] = array('sylius');
             }
             if (!isset($config['validation_groups'][$subject]['attribute_value'])) {
                 $config['validation_groups'][$subject]['attribute_value'] = array('sylius');
@@ -70,7 +77,7 @@ class SyliusAttributeExtension extends AbstractResourceExtension
 
         $config['validation_groups'] = $convertedConfig;
 
-        return $config;
+        return parent::process($config, $container);
     }
 
     /**
@@ -84,9 +91,11 @@ class SyliusAttributeExtension extends AbstractResourceExtension
     private function createSubjectServices(ContainerBuilder $container, $driver, $subject, array $config)
     {
         $attributeAlias = $subject.'_attribute';
+        $attributeTranslationAlias = $subject.'_attribute_translation';
         $attributeValueAlias = $subject.'_attribute_value';
 
         $attributeClasses = $config[$attributeAlias];
+        $attributeTranslationClasses = $attributeClasses['translation'];
         $attributeValueClasses = $config[$attributeValueAlias];
 
         $attributeFormType = new Definition($attributeClasses['form']);
@@ -96,6 +105,14 @@ class SyliusAttributeExtension extends AbstractResourceExtension
         ;
 
         $container->setDefinition('sylius.form.type.'.$attributeAlias, $attributeFormType);
+
+        $attributeFormTranslationType = new Definition($attributeTranslationClasses['form']['default']);
+        $attributeFormTranslationType
+            ->setArguments(array($attributeTranslationClasses['model'], '%sylius.validation_group.'.$attributeTranslationAlias.'%', $subject))
+            ->addTag('form.type', array('alias' => 'sylius_'.$attributeTranslationAlias))
+        ;
+
+        $container->setDefinition('sylius.form.type.'.$attributeTranslationAlias, $attributeFormTranslationType);
 
         $choiceTypeClasses = array(
             SyliusResourceBundle::DRIVER_DOCTRINE_ORM => 'Sylius\Bundle\AttributeBundle\Form\Type\AttributeEntityChoiceType'

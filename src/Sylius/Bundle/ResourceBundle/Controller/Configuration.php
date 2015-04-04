@@ -17,8 +17,9 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * Resource controller configuration.
  *
- * @author Paweł Jędrzejewski <pjedrzejewski@sylius.pl>
+ * @author Paweł Jędrzejewski <pawel@sylius.org>
  * @author Saša Stamenković <umpirsky@gmail.com>
+ * @author Gustavo Perdomo <gperdomor@gmail.com>
  */
 class Configuration
 {
@@ -180,10 +181,52 @@ class Configuration
         }
 
         if (is_array($redirect)) {
+            if (!empty($redirect['referer'])) {
+                return 'referer';
+            }
+
             return $redirect['route'];
         }
 
         return $redirect;
+    }
+
+    /**
+     * Get url hash fragment (#text) which is you configured.
+     *
+     * @return null|string
+     */
+    public function getRedirectHash()
+    {
+        $redirect = $this->parameters->get('redirect');
+
+        if (!is_array($redirect) || empty($redirect['hash'])) {
+            return null;
+        }
+
+        return '#'.$redirect['hash'];
+    }
+
+    /**
+     * Get redirect referer, This will detected by configuration
+     * If not exists, The `referrer` from headers will be used.
+     *
+     * @return null|string
+     */
+    public function getRedirectReferer()
+    {
+        $redirect = $this->parameters->get('redirect');
+        $referer = $this->request->headers->get('referer');
+
+        if (!is_array($redirect) || empty($redirect['referer'])) {
+            return $referer;
+        }
+
+        if ($redirect['referer'] === true) {
+            return $referer;
+        }
+
+        return $redirect['referer'];
     }
 
     /**
@@ -195,7 +238,7 @@ class Configuration
     {
         $redirect = $this->parameters->get('redirect');
 
-        if (null === $redirect || !is_array($redirect)) {
+        if (!is_array($redirect) || empty($redirect['parameters'])) {
             $redirect = array('parameters' => array());
         }
 
@@ -210,7 +253,7 @@ class Configuration
 
     public function isLimited()
     {
-        return (boolean) $this->parameters->get('limit', $this->settings['limit']);
+        return (bool) $this->parameters->get('limit', $this->settings['limit']);
     }
 
     public function getLimit()
@@ -225,7 +268,7 @@ class Configuration
 
     public function isPaginated()
     {
-        return (boolean) $this->parameters->get('paginate', $this->settings['default_page_size']);
+        return (bool) $this->parameters->get('paginate', $this->settings['default_page_size']);
     }
 
     public function getPaginationMaxPerPage()
@@ -235,48 +278,56 @@ class Configuration
 
     public function isFilterable()
     {
-        return (boolean) $this->parameters->get('filterable', $this->settings['filterable']);
+        return (bool) $this->parameters->get('filterable', $this->settings['filterable']);
     }
 
     public function getCriteria(array $criteria = array())
     {
+        $defaultCriteria = array_merge($this->parameters->get('criteria', array()), $criteria);
+
         if ($this->isFilterable()) {
-            $criteria = array_merge(
-                $criteria,
-                $this->parameters->get('criteria', array()),
-                $this->request->get('criteria', array())
-            );
+            return $this->getRequestParameter('criteria', $defaultCriteria);
         }
 
-        return $criteria;
+        return $defaultCriteria;
     }
 
     public function isSortable()
     {
-        return (Boolean) $this->parameters->get('sortable', $this->settings['sortable']);
+        return (bool) $this->parameters->get('sortable', $this->settings['sortable']);
     }
 
     public function getSorting(array $sorting = array())
     {
+        $defaultSorting = array_merge($this->parameters->get('sorting', array()), $sorting);
+
         if ($this->isSortable()) {
-            $sorting = array_merge(
-                $sorting,
-                $this->parameters->get('sorting', array()),
-                $this->request->get('sorting', array())
-            );
+            return $this->getRequestParameter('sorting', $defaultSorting);
         }
 
-        return $sorting;
+        return $defaultSorting;
     }
 
-    public function getMethod($default)
+    public function getRequestParameter($parameter, $defaults = array())
     {
-        return $this->parameters->get('method', $default);
+        return array_replace_recursive(
+            $defaults,
+            $this->request->get($parameter, array())
+        );
     }
 
-    public function getArguments(array $default = array())
+    public function getRepositoryMethod($default)
     {
-        return $this->parameters->get('arguments', $default);
+        $repository = $this->parameters->get('repository', array('method' => $default));
+
+        return is_array($repository) ? $repository['method'] : $repository;
+    }
+
+    public function getRepositoryArguments(array $default = array())
+    {
+        $repository = $this->parameters->get('repository', array());
+
+        return isset($repository['arguments']) ? $repository['arguments'] : $default;
     }
 
     public function getFactoryMethod($default)
@@ -313,5 +364,15 @@ class Configuration
     public function getSerializationVersion()
     {
         return $this->parameters->get('serialization_version');
+    }
+
+    public function getEvent($default = null)
+    {
+        return $this->parameters->get('event', $default);
+    }
+
+    public function getPermission($default = null)
+    {
+        return $this->parameters->get('permission', $default);
     }
 }

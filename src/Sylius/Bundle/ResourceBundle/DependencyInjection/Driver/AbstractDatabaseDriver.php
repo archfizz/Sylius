@@ -35,6 +35,11 @@ abstract class AbstractDatabaseDriver implements DatabaseDriverInterface
     /**
      * @var string
      */
+    protected $managerName;
+
+    /**
+     * @var string
+     */
     protected $resourceName;
 
     /**
@@ -42,11 +47,12 @@ abstract class AbstractDatabaseDriver implements DatabaseDriverInterface
      */
     protected $templates;
 
-    public function __construct(ContainerBuilder $container, $prefix, $resourceName, $templates = null)
+    public function __construct(ContainerBuilder $container, $prefix, $resourceName, $managerName, $templates = null)
     {
         $this->container = $container;
         $this->prefix = $prefix;
         $this->resourceName = $resourceName;
+        $this->managerName = $managerName;
         $this->templates = $templates;
     }
 
@@ -59,9 +65,19 @@ abstract class AbstractDatabaseDriver implements DatabaseDriverInterface
             );
         }
 
+        $repositoryDefinition = $this->getRepositoryDefinition($classes);
+        $reflection = new \ReflectionClass($repositoryDefinition->getClass());
+
+        $translatableRepositoryInterface = 'Sylius\Component\Translation\Repository\TranslatableResourceRepositoryInterface';
+
+        if (interface_exists($translatableRepositoryInterface) && $reflection->implementsInterface($translatableRepositoryInterface)) {
+            $repositoryDefinition->addMethodCall('setLocaleProvider', array(new Reference('sylius.translation.locale_provider')));
+            $repositoryDefinition->addMethodCall('setTranslatableFields', array($classes['translation']['mapping']['fields']));
+        }
+
         $this->container->setDefinition(
             $this->getContainerKey('repository'),
-            $this->getRepositoryDefinition($classes)
+            $repositoryDefinition
         );
 
         $this->setManagerAlias();

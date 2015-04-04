@@ -11,12 +11,12 @@
 
 namespace Sylius\Bundle\CoreBundle\Checkout\Step;
 
-use Payum\Bundle\PayumBundle\Security\TokenFactory;
 use Payum\Core\Registry\RegistryInterface;
+use Payum\Core\Security\GenericTokenFactoryInterface;
 use Payum\Core\Security\HttpRequestVerifierInterface;
 use Sylius\Bundle\CoreBundle\Event\PurchaseCompleteEvent;
 use Sylius\Bundle\FlowBundle\Process\Context\ProcessContextInterface;
-use Sylius\Bundle\PayumBundle\Payum\Request\StatusRequest;
+use Sylius\Bundle\PayumBundle\Payum\Request\GetStatus;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\SyliusCheckoutEvents;
 use Sylius\Component\Payment\PaymentTransitions;
@@ -40,7 +40,7 @@ class PurchaseStep extends CheckoutStep
         $captureToken = $this->getTokenFactory()->createCaptureToken(
             $payment->getMethod()->getGateway(),
             $payment,
-            'sylius_checkout_forward',
+            $context->getProcess()->getForwardRoute(),
             array('stepName' => $this->getName())
         );
 
@@ -52,24 +52,19 @@ class PurchaseStep extends CheckoutStep
      */
     public function forwardAction(ProcessContextInterface $context)
     {
-        $token = $this->getHttpRequestVerifier()->verify($this->getRequest());
+        $token = $this->getHttpRequestVerifier()->verify($context->getRequest());
         $this->getHttpRequestVerifier()->invalidate($token);
 
-        $status = new StatusRequest($token);
+        $status = new GetStatus($token);
         $this->getPayum()->getPayment($token->getPaymentName())->execute($status);
 
         /** @var $payment PaymentInterface */
-        $payment = $status->getModel();
-
-        if (!$payment instanceof PaymentInterface) {
-            throw new UnexpectedTypeException($payment, 'Sylius\Component\Core\Model\PaymentInterface');
-        }
-
+        $payment = $status->getFirstModel();
         $order = $payment->getOrder();
 
         $this->dispatchCheckoutEvent(SyliusCheckoutEvents::PURCHASE_INITIALIZE, $order);
 
-        $nextState = $status->getStatus();
+        $nextState = $status->getValue();
 
         $stateMachine = $this->get('sm.factory')->get($payment, PaymentTransitions::GRAPH);
 
@@ -100,7 +95,7 @@ class PurchaseStep extends CheckoutStep
     }
 
     /**
-     * @return TokenFactory
+     * @return GenericTokenFactoryInterface
      */
     protected function getTokenFactory()
     {

@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\PaymentBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -36,8 +37,9 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')->isRequired()->cannotBeEmpty()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
                 ->arrayNode('gateways')
+                    ->useAttributeAsKey('name')
                     ->prototype('scalar')
                 ->end()
             ->end()
@@ -65,27 +67,27 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Payment\Model\PaymentMethod')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\\Bundle\\ResourceBundle\\Controller\\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('repository')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\\Bundle\\PaymentBundle\\Form\\Type\\PaymentMethodType')->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\PaymentBundle\Form\Type\PaymentMethodType')->end()
                             ->end()
                         ->end()
                         ->arrayNode('payment')
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Payment\Model\Payment')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\\Bundle\\ResourceBundle\\Controller\\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('repository')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\\Bundle\\PaymentBundle\\Form\\Type\\PaymentType')->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\PaymentBundle\Form\Type\PaymentType')->end()
                             ->end()
                         ->end()
                         ->arrayNode('credit_card')
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Payment\Model\CreditCard')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\\Bundle\\ResourceBundle\\Controller\\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('repository')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\\Bundle\\PaymentBundle\\Form\\Type\\CreditCardType')->end()
+                                ->scalarNode('form')->defaultValue('Sylius\Bundle\PaymentBundle\Form\Type\CreditCardType')->end()
                             ->end()
                         ->end()
                     ->end()

@@ -1,7 +1,19 @@
-email:
-    order_confirmation:
-        subject: email.order_confirmation.subject
+# This file is part of the Sylius package.
+# (c) Paweł Jędrzejewski
+
 sylius:
+    emails:
+        order_confirmation:
+            name: Order confirmation
+            subject: Thank you for your order!
+
+        order_comment:
+            name: Order comment
+            subject: New comment posted on order #{{ order.number }}
+
+        user_confirmation:
+            name: User confirmation
+            subject: Welcome to our store!
     account:
         address:
             action:
@@ -25,6 +37,7 @@ sylius:
             outline: Enjoy all the features that are available on your personal space to view, track and manage all your data.
             since: You are customer since
             welcome: Welcome to your space
+            last5orders: Your last 5 orders
         order:
             created_at: Placed at
             details: Details of your order
@@ -77,32 +90,99 @@ sylius:
             products: Your products
             users: Users
         statistics:
-            0: This month's statistics
+            header: This month's statistics
             orders_this_month: Total orders
             registrations_this_month: Total registrations
             sales_this_month: Sales
     backend_welcome: Hello <b>%name%</b>!
     block:
-        body: Body
-        create: Create block
-        create_header: Creating new content block
-        id: ID
-        index_header: Content blocks
+        index_header: Blocks
         no_results: There are no blocks to display.
-        title: Title
-        update_header: Editing content block
-        updated_at: Last update
+        simple_blocks: Simple blocks
+        string_blocks: String blocks
+        imagine_blocks: Imagine blocks
+        slideshow_blocks: Slideshow blocks
+        imagine:
+            create: Create imagine block
+            create_header: Creating a new imagine block
+            end_date: End date
+            id: Id
+            index: Imagine Blocks
+            index_header: Imagine blocks
+            label: Label
+            publishable: Published
+            start_date: Start Date
+            title: Title
+            update_header: Editing imagine block
+            updated_at: Last update
+        simple:
+            body: Body
+            create: Create simple block
+            create_header: Creating a new simple block
+            end_date: End date
+            id: Id
+            index: Simple blocks
+            index_header: Simple blocks
+            label: Label
+            publishable: Published
+            start_date: Start Date
+            title: Title
+            update_header: Editing simple block
+            updated_at: Last update
+        slideshow:
+            body: Body
+            create: Create slideshow block
+            create_header: Creating a new slideshow block
+            end_date: End date
+            id: Id
+            index: Slideshow Blocks
+            index_header: Slideshow blocks
+            publishable: Published
+            start_date: Start Date
+            title: Title
+            update_header: Editing slideshow block
+            updated_at: Last update
+        string:
+            body: Body
+            create: Create string block
+            create_header: Creating a new string block
+            end_date: End date
+            id: Id
+            index: String blocks
+            index_header: String blocks
+            label: Label
+            publishable: Published
+            start_date: Start Date
+            title: Title
+            update_header: Editing string block
+            updated_at: Last update
     breadcrumb:
         assortment: Assortment
         block:
-            index: Content Blocks
+            imagine:
+                index: Imagine Blocks
+            index:
+                Blocks
+            simple:
+                index: Simple Blocks
+            slideshow:
+                index: Slideshow Blocks
+            string:
+                index: String Blocks
         build: Build
         configuration: Configuration
+        content: Content
         country:
             index: Countries
         customers: Customers
         dashboard: Dashboard
         edit: Edit
+        contact_request:
+            index: Contact requests
+            show: Contact request
+        contact_topic:
+            index: Contact topics
+        content: Content
         currency:
             index: Currencies
         general_settings: General Settings
@@ -113,13 +193,19 @@ sylius:
             index: Inventory
         locale:
             index: Locales
+        marketing: Marketing
+        menu:
+            index: Menus
+        menu_node:
+            index: Menu nodes
         new: New
         option:
             index: Options
         order:
             index: Orders
+            adjustments: Adjustments
         page:
-            index: Static Pages
+            index: Pages
         payment:
             index: Payments
         payment_method:
@@ -132,15 +218,23 @@ sylius:
             index: Coupons
         attribute:
             index: Attributes
-        prototype:
-            index: Prototypes
+        archetype:
+            index: archetypes
+        redirect_route:
+            index: Redirect routes
+        report:
+            index: Reports
+        route:
+            index: Routes
         sales: Sales
+        security_settings: Security Settings
         shipment:
             index: Shipments
         shipping_category:
             index: Shipping Categories
         shipping_method:
             index: Shipping Methods
+        support: Support
         tax_category:
             index: Tax Categories
         tax_rate:
@@ -148,9 +242,15 @@ sylius:
         taxation_settings: Taxation Settings
         taxonomy:
             index: Taxonomies
+        email:
+            index: Emails
         update: Edit
         user:
             index: Users
+        permission:
+            index: Permissions
+        role:
+            index: Roles
         zone:
             index: Zones
     browse_products: Browse products
@@ -216,6 +316,8 @@ sylius:
             login: Login
             new_customer: New Customer
             register: Register
+            guest: Guest
+            proceed_order: Proceed with your order
         shipping:
             error: We're sorry, but our shop is not able to provide product shipping to country which you have chosen.
             header: Shipping method
@@ -234,6 +336,17 @@ sylius:
         no_results: There are no countries configured.
         show_header: Country details
         update_header: Editing country
+    email:
+        create: Add new Email
+        create_header: Adding new Email
+        index_header: Email Templates
+        manage: Manage Emails
+        no_results: There are no emails configured.
+        update_header: Editing Email
+        code: Code
+        enabled: Enabled?
+        subject: Subject
+        updated_at: Last update
     create: Create
     created_at: Created at
     delete: delete
@@ -241,7 +354,27 @@ sylius:
     edit: edit
     move_up: move up
     move_down: move down
-    email: E-Mail
+    permission:
+        create: Add new permission
+        create_header: New permission
+        code: Code
+        id: ID
+        description: Description
+        index_header: Permissions
+        no_results: There are no permissions defined.
+        update_header: Editing permission
+        updated_at: Last update
+    role:
+        create: Add new role
+        create_header: New role
+        code: Code
+        id: ID
+        name: Name
+        description: Description
+        index_header: Roles
+        no_results: There are no roles defined.
+        update_header: Editing role
+        updated_at: Last update
     currency:
         create: Create currency
         create_header: New currency
@@ -270,17 +403,23 @@ sylius:
         login:
             email: Email
             password: Password
+        menu:
+            add_menu_node: Add menu element
         option_value:
             add_value: Add value
         profile:
             email: Email
             firstName: First name
             lastName: Last name
+        comment:
+            comment: Comment
+            notify_customer: Notify Customer?
     gallery:
         next: Next
         previous: Previous
         slideshow: Slideshow
     generate: Generate
+    go_to_dashboard: Go to dashboard
     group:
         create: Create group
         create_header: Adding new user groups
@@ -292,12 +431,14 @@ sylius:
         update_header: Edit group
     hide_deleted: Hide deleted
     history:
-        0: History
+        header: History
         action: Action
         author: Author
         data: Data
-        logged_at: Logged at
-        version: Version
+        logged_at: Logged at (version)
+        revert: Revert
+        no_results: There are no logged events to display.
+        empty: Empty
     homepage:
         splash:
             headline: Welcome to Sylius
@@ -323,6 +464,26 @@ sylius:
     login_header: Administration
     logo: Sylius
     manage: Manage
+    menu:
+        create: Create menu
+        create_header: Creating menu
+        end_date: End date
+        id: ID
+        index_header: Menus
+        no_results: There are no menus to display.
+        publishable: Published
+        start_date: Start date
+        title: Title
+        update_header: Editing menu
+    menu_node:
+        create: Create menu node
+        create_header: Creating menu node
+        id: ID
+        index_header: Menu nodes
+        no_results: There are no menu nodes to display.
+        parent: Parent
+        title: Title
+        update_header: Editing menu node
     meta:
         backend_title: Sylius Dashboard
         frontend_description: Sylius is modern ecommerce solution for PHP, based on the Symfony2 framework.
@@ -331,7 +492,7 @@ sylius:
     na: N/A
     newest: Newest products
     no: no
-    no_results: sylius.no_results
+    no_results: No results
     product_option:
         create: Create option
         create_header: New product option
@@ -348,11 +509,14 @@ sylius:
         create: Create order
         create_header: New order
         created_at: Creation time
+        details: Order details
         general_info: General info
+        guest: Guest customer
         id: ID
         index_header: Current orders
         inventory_tracking: Inventory tracking
         items_total: Items total
+        items: Items
         manage: Manage orders
         no_items: This order does not contain any items
         no_results: You have no new orders
@@ -360,6 +524,7 @@ sylius:
         no_shipping_charges: No shipping charges applied
         no_taxes: No taxes applied
         number: Number
+        order_state: Order state
         payment: Payment
         payment_state: Payment state
         payment_states:
@@ -384,11 +549,60 @@ sylius:
             checkout: Checkout
             order_confimed: Order confirmed
             ordered: Ordered
+            shipped: Shipped
+            abandoned: Abandoned
+            cancelled: Cancelled
+            returned: Returned
         tax_total: Tax total
         taxes: Taxes
         total: Total
         update_header: Editing order
         user: User
+        currency: Currency
+        state: State
+        immutable_warning: Already shipped orders are immutable.
+        promotion_coupons: Coupons
+        no_promotion: No coupons were used.order:
+        adjustments:
+            manage: Manage adjustments
+            label: Label
+            description: Description
+            amount: Amount
+            locked: Locked?
+            lock: Lock
+            unlock: Unlock
+            lock_all: Lock all adjustments
+            unlock_all: Unlock all adjustments
+        comment:
+            header: Order comments
+            comment: Comment
+            author: Author
+            created_at: Created at
+            notify: Notification
+            state: State
+            customer:
+                notified: Customer notified
+                not_notified: Customer not notified
+            no_comment: No comment
+    route:
+        create: Create route
+        create_header: Creating route
+        id: ID
+        index_header: Routes
+        name: Name
+        no_results: There are no routes to display.
+        page: Page
+        title: Title
+        update_header: Editing route
+        view: View
+    redirect_route:
+        create: Create redirect route
+        create_header: Creating redirect route
+        id: ID
+        index_header: Redirect route
+        no_results: There are no redirect routes to display.
+        title: Title
+        update_header: Editing redirect route
     shipment:
         ship: Ship
         created_at: Created at
@@ -419,12 +633,15 @@ sylius:
     page:
         body: Body
         create: Create new page
-        create_header: Creating new static content
+        create_header: Creating new page
         id: ID
         index_header: Pages
-        no_results: There are no static pages to display.
+        no_results: There are no pages to display.
+        publishable: Published
+        start_date: Start Date
+        end_date: End date
         title: Title
-        update_header: Last update
+        update_header: Editing page
     password: Password
     payment:
         amount: Amount
@@ -437,7 +654,7 @@ sylius:
         method: Method
         no_results: There are no payments configured.
         state:
-            0: State
+            header: State
             cancelled: Cancelled
             checkout: Checkout
             completed: Completed
@@ -469,6 +686,7 @@ sylius:
         contain_variants: Contain Variants
         create: Create product
         create_header: New product
+        archetype: Archetype
         description: Description
         generate_variants: Generate variants
         index_by_taxon_header: Products <small>Categorized under "%taxon%" taxon</small>
@@ -486,6 +704,7 @@ sylius:
         no_tax_category: No tax category
         no_taxons: There are no taxons for this product
         options: Options
+        variants: Variants
         price: Retail price
         attributes: Attributes
         restricted_zone: Restricted zone
@@ -508,6 +727,11 @@ sylius:
         updated_at: Last update
         variant_selection_method: Variant selection method
         view_details: View %product% details.
+        volume_price: Volume based pricing
+        volume_based:
+            qty_min: Qty min
+            qty_max: Qty max
+            price: Price
     product_not_available_in_zone: Not available in your country
     promotion:
         actions: Actions
@@ -548,6 +772,7 @@ sylius:
         no_results: There are no coupon to display.
         total_results: Total: %total%
         update_header: Editing coupon
+        expires_at: Expires at
     promotion_rule:
         configuration: Configuration
         type: Type
@@ -563,25 +788,45 @@ sylius:
         type: type
         update_header: Editing attribute
         updated_at: last update
-    prototype:
-        build: Build prototype
-        build_header: Building product from prototype
-        create: Create prototype
-        create_header: New prototype
-        index_header: Product prototypes
+    archetype:
+        build: Build archetype
+        build_header: Building product from archetype
+        create: Create archetype
+        create_header: New archetype
+        index_header: Product archetypes
+        code: code
         name: name
-        no_results: There are no prototypes defined.
+        no_results: There are no archetypes defined.
         options: options
-        attributes:
-        update_header: Editing prototype
+        attributes: attributes
+        parent: parent
+        update_header: Editing archetype
         updated_at: last update
     province:
         provinces: Provinces
     remember_me: Remember me?
+    report:
+        create: Create report
+        create_header: Create new report
+        no_results: There are no reports created.
+        show_header: Report details
+        details: details
+        id: id
+        name: Name
+        code: Code
+        description: Description
+        manage: Manage
+        update_header: Edit report
+        renderer: Renderer type
+        data_fetcher: Data fetcher type
+        index_header: Reports
+        no_data: There is no data to display.
+        no_report: There is no report to display.
     save_changes: Save changes
     search: Search
     settings:
         general_header: General settings
+        security_header: Security settings
         taxation_header: Taxation settings
     shipment_category:
         manage: Manage shipping categories
@@ -704,6 +949,8 @@ sylius:
         show_header: User details
         update_header: Editing user
         username: Username
+        groups: Groups
+        no_groups: There are no groups for this user to display.
     variant:
         add_image: Add image
         availability: Availability
@@ -733,3 +980,26 @@ sylius:
         scope: Scope
     zone_member:
         members: Members
+    contact_topic:
+        create: Create contact topic
+        create_header: New contact topic
+        id: ID
+        title: Title
+        index_header: Contact topics
+        no_results: There are no contact topics to display.
+        update_header: Editing contact topic
+        updated_at: Last update
+    contact_request:
+        create: Create contact request
+        create_header: New contact request
+        id: ID
+        firstName: First name
+        lastName: Last name
+        email: Email
+        message: Message
+        topic: Topic
+        index_header: Contact requests
+        no_results: There are no contact requests to display.
+        update_header: Editing contact request
+        updated_at: Last update
+        show_header: Contact request details

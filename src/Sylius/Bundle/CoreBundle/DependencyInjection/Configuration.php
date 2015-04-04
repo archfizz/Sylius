@@ -11,6 +11,7 @@
 
 namespace Sylius\Bundle\CoreBundle\DependencyInjection;
 
+use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -26,68 +27,16 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')->cannotBeOverwritten()->isRequired()->cannotBeEmpty()->end()
+                ->scalarNode('driver')->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)->end()
+                ->scalarNode('currency_storage')->defaultValue('sylius.storage.session')->end()
             ->end()
         ;
 
         $this->addClassesSection($rootNode);
-        $this->addEmailsSection($rootNode);
         $this->addRoutingSection($rootNode);
         $this->addCheckoutSection($rootNode);
 
         return $treeBuilder;
-    }
-
-    protected function addEmailsSection(ArrayNodeDefinition $node)
-    {
-        $emailNode = $node->children()->arrayNode('emails');
-
-        $emailNode
-            ->addDefaultsIfNotSet()
-            ->children()
-                ->booleanNode('enabled')->defaultFalse()->end()
-                ->arrayNode('from_email')
-                    ->addDefaultsIfNotSet()
-                    ->children()
-                        ->scalarNode('address')->defaultValue('webmaster@example.com')->cannotBeEmpty()->end()
-                        ->scalarNode('sender_name')->defaultValue('webmaster')->cannotBeEmpty()->end()
-                    ->end()
-                ->end()
-            ->end()
-        ->end();
-
-        $this->addEmailConfiguration($emailNode, 'order_confirmation', 'SyliusWebBundle:Frontend/Email:orderConfirmation.html.twig');
-        $this->addEmailConfiguration($emailNode, 'customer_welcome', 'SyliusWebBundle:Frontend/Email:customerWelcome.html.twig');
-
-        return $emailNode;
-    }
-
-    /**
-     * Helper method to configure a single email type
-     *
-     * @param ArrayNodeDefinition $node
-     * @param string              $name
-     * @param string              $template
-     */
-    protected function addEmailConfiguration(ArrayNodeDefinition $node, $name, $template)
-    {
-        $node
-            ->children()
-                ->arrayNode($name)
-                ->addDefaultsIfNotSet()
-                ->canBeUnset()
-                ->children()
-                    ->booleanNode('enabled')->defaultTrue()->end()
-                    ->scalarNode('template')->defaultValue($template)->end()
-                    ->arrayNode('from_email')
-                    ->canBeUnset()
-                    ->children()
-                        ->scalarNode('address')->isRequired()->cannotBeEmpty()->end()
-                        ->scalarNode('sender_name')->isRequired()->cannotBeEmpty()->end()
-                    ->end()
-                ->end()
-            ->end()
-        ->end();
     }
 
     /**
@@ -106,7 +55,7 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Core\Model\User')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
+                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\CoreBundle\Controller\UserController')->end()
                                 ->scalarNode('form')->defaultValue('Sylius\Bundle\CoreBundle\Form\Type\UserType')->end()
                             ->end()
                         ->end()
@@ -123,22 +72,6 @@ class Configuration implements ConfigurationInterface
                                 ->scalarNode('model')->defaultValue('Sylius\Component\Core\Model\Group')->end()
                                 ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
                                 ->scalarNode('form')->defaultValue('Sylius\Bundle\CoreBundle\Form\Type\GroupType')->end()
-                            ->end()
-                        ->end()
-                        ->arrayNode('block')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->scalarNode('model')->defaultValue('Symfony\Cmf\Bundle\BlockBundle\Doctrine\Phpcr\SimpleBlock')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\Bundle\CoreBundle\Form\Type\BlockType')->end()
-                            ->end()
-                        ->end()
-                        ->arrayNode('page')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->scalarNode('model')->defaultValue('Symfony\Cmf\Bundle\ContentBundle\Doctrine\Phpcr\StaticContent')->end()
-                                ->scalarNode('controller')->defaultValue('Sylius\Bundle\ResourceBundle\Controller\ResourceController')->end()
-                                ->scalarNode('form')->defaultValue('Sylius\Bundle\CoreBundle\Form\Type\PageType')->end()
                             ->end()
                         ->end()
                         ->arrayNode('product_variant_image')
@@ -173,7 +106,14 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode('field')->isRequired()->cannotBeEmpty()->info('Field representing the URI path.')->end()
                         ->scalarNode('prefix')->defaultValue('')->info('Prefix applied to all routes.')->end()
                         ->arrayNode('defaults')->isRequired()->cannotBeEmpty()->info('Defaults to add to the generated route.')
-                            ->prototype('variable')
+                            ->children()
+                                ->scalarNode('controller')->isRequired()->cannotBeEmpty()->info('Controller where the request should be routed.')->end()
+                                ->scalarNode('repository')->isRequired()->cannotBeEmpty()->info('Repository where the router will find the class.')->end()
+                                ->arrayNode('sylius')->isRequired()->cannotBeEmpty()->info('Sylius defaults to add to generated route.')
+                                    ->useAttributeAsKey('sylius')
+                                    ->prototype('variable')
+                                ->end()
+                            ->end()
                         ->end()
                     ->end()
                 ->end()

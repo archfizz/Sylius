@@ -13,13 +13,14 @@ namespace Sylius\Bundle\SettingsBundle\DependencyInjection;
 
 use Sylius\Bundle\ResourceBundle\DependencyInjection\AbstractResourceExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
 /**
- * Settings system extension.
+ * Settings extension.
  *
  * @author Paweł Jędrzejewski <pjedrzejewski@sylius.pl>
  */
-class SyliusSettingsExtension extends AbstractResourceExtension
+class SyliusSettingsExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
     protected $configFiles = array(
         'services',
@@ -32,7 +33,12 @@ class SyliusSettingsExtension extends AbstractResourceExtension
      */
     public function load(array $config, ContainerBuilder $container)
     {
-        list($config) = $this->configure($config, new Configuration(), $container, self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE);
+        list($config) = $this->configure(
+            $config,
+            new Configuration(),
+            $container,
+            self::CONFIGURE_LOADER | self::CONFIGURE_DATABASE
+        );
 
         $classes = $config['classes'];
         $parameterClasses = $classes['parameter'];
@@ -50,5 +56,21 @@ class SyliusSettingsExtension extends AbstractResourceExtension
         }
 
         $container->setParameter('sylius.config.classes', $classes);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function prepend(ContainerBuilder $container)
+    {
+        if (!$container->hasExtension('doctrine_cache')) {
+            throw new \RuntimeException('DoctrineCacheBundle must be registered!');
+        }
+
+        $container->prependExtensionConfig('doctrine_cache', array(
+            'providers' => array(
+                'sylius_settings' => '%sylius.cache%'
+            )
+        ));
     }
 }
